@@ -424,7 +424,10 @@ const App: React.FC = () => {
       //（首页相反，用 .screen-home 走 dvh —— 因为它没有固定 header，怕的是按钮被切掉。）
       // 注意别在注释里写出 Tailwind 任意值的原样写法：扫描器会把注释也当内容，
       // 凭空生成一条产物里根本用不到的 100dvh 规则。
-      className="game-scene relative w-full max-w-full h-screen overflow-hidden select-none font-sans flex flex-col justify-between items-center bg-[#9BD7FD]"
+      // showInfo 时挂上 awards-paused，由 index.css 暂停棋盘上的道具待机动画
+      //（弹窗盖住棋盘，循环动画看不见还白耗电）。悬挂在整块游戏区的根上而不是
+      // Grid 上：装饰图、header 都在这个根里，类只需加一处。
+      className={`game-scene relative w-full max-w-full h-screen overflow-hidden select-none font-sans flex flex-col justify-between items-center bg-[#9BD7FD]${showInfo ? ' awards-paused' : ''}`}
       onMouseUp={() => setGameState(prev => ({ ...prev, isDragging: false }))}
     >
       <img

@@ -405,16 +405,20 @@ button {
 }
 
 /* 奖励道具的待机浮动动画：底板保持不动，只有前景元素做低幅位移。
-   注意幅度值都是「原始幅度 × 1.05」：scale 看的是相对 1 的差值
-   （1.02 的幅度是 0.02，不是 1.02），所以 1.02 → 1.021 而不是 1.071。
-   改幅度时请连注释里的原值一起更新，否则下一轮再乘就对不上了。 */
+   幅度基准是下面每个 50% 块里注释的「原」值（第一次上调之前的版本），
+   当前系数 ×1.1025 —— 第一轮 ×1.05，本轮再 ×1.05。
+   scale 看的是相对 1 的差值（1.02 的幅度是 0.02，不是 1.02），所以是
+   1.02 + 0.02 × 1.1025 = 1.02205，不是 1.02 × 1.1025 = 1.1241。
+   再调时请一律按「原值 × 新系数」整体重算，不要在现值上连乘：现值都是
+   四舍五入过的，连乘既累积误差、也对不上注释里的原值。
+   awardWarning（超时预警）维持上一轮的 ×1.05 未动 —— 本轮只上调四条待机动画。 */
 @keyframes awardBob {
   0%, 100% {
     transform: translateY(0) scale(1);
   }
   50% {
-    /* 原 translateY(-2px) scale(1.02) */
-    transform: translateY(-2.1px) scale(1.021);
+    /* 原 translateY(-2px) scale(1.02)，×1.1025 */
+    transform: translateY(-2.205px) scale(1.02205);
   }
 }
 
@@ -423,8 +427,8 @@ button {
     transform: scale(1) rotate(0deg);
   }
   50% {
-    /* 原 scale(1.04) rotate(2.5deg) */
-    transform: scale(1.042) rotate(2.625deg);
+    /* 原 scale(1.04) rotate(2.5deg)，×1.1025 */
+    transform: scale(1.0441) rotate(2.75625deg);
   }
 }
 
@@ -433,8 +437,8 @@ button {
     transform: scale(1) rotate(0deg);
   }
   50% {
-    /* 原 scale(1.02) rotate(-2deg) */
-    transform: scale(1.021) rotate(-2.1deg);
+    /* 原 scale(1.02) rotate(-2deg)，×1.1025 */
+    transform: scale(1.02205) rotate(-2.205deg);
   }
 }
 
@@ -443,8 +447,8 @@ button {
     transform: scale(1) translateY(0);
   }
   50% {
-    /* 原 scale(1.03) translateY(-1.5px) */
-    transform: scale(1.0315) translateY(-1.575px);
+    /* 原 scale(1.03) translateY(-1.5px)，×1.1025 */
+    transform: scale(1.033075) translateY(-1.65375px);
   }
 }
 
@@ -476,6 +480,24 @@ button {
 
 .animate-award-warning {
   animation: awardWarning 0.5s ease-in-out infinite;
+}
+
+/* ---- 弹窗打开时暂停棋盘上的待机动画 ----
+   说明页盖住棋盘时，这些 infinite 循环还在背景里跑：看不见、白耗电，
+   动画本来想传达的「这里有东西可以吃」也传不出去。用一个祖先类统一暂停，
+   比给 Grid / Cell 层层传 prop 省事，也不影响 Cell 现有的类名逻辑。
+   只暂停「待机循环」这 5 条，不动退场动画（collect / expire）：退场是一次性的
+   状态过渡，中途冻住会把道具卡在淡出一半的可见状态上，比让它播完更糟。
+   用 animation-play-state 而不是 animation: none —— 后者会让道具「啪」地弹回
+   正中静止姿态、关闭弹窗时再弹回去；暂停则原地定住、关闭后从原处续播。
+   选择器比 .animate-award-* 多一个类，优先级更高，不受两条规则的先后影响
+   （prefers-reduced-motion 那条带 !important，仍然优先，两者结果都是不动）。 */
+.awards-paused .animate-award-bob,
+.awards-paused .animate-award-twinkle,
+.awards-paused .animate-award-sway,
+.awards-paused .animate-award-jiggle,
+.awards-paused .animate-award-warning {
+  animation-play-state: paused;
 }
 
 /* 奖励道具退场 —— 必须拆成"外层只淡出 + 内层做缩放"两层。
