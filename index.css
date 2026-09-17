@@ -391,15 +391,30 @@ button {
   .animate-expire-shrink {
     animation: none !important;
   }
+
+  /* 待机动画同样是 infinite，必须一起关掉：之前只列了上面 4 个退场动画，
+     结果开了「减弱动态效果」的用户看到退场乖乖降级，道具却仍在眼前一直晃。
+     这 5 条都没有 fill-mode，关掉即停在静止姿态，不需要额外的兜底类。 */
+  .animate-award-bob,
+  .animate-award-twinkle,
+  .animate-award-sway,
+  .animate-award-jiggle,
+  .animate-award-warning {
+    animation: none !important;
+  }
 }
 
-/* Award element floating/idle animations: Background stays still, element moves with refined low-amplitude */
+/* 奖励道具的待机浮动动画：底板保持不动，只有前景元素做低幅位移。
+   注意幅度值都是「原始幅度 × 1.05」：scale 看的是相对 1 的差值
+   （1.02 的幅度是 0.02，不是 1.02），所以 1.02 → 1.021 而不是 1.071。
+   改幅度时请连注释里的原值一起更新，否则下一轮再乘就对不上了。 */
 @keyframes awardBob {
   0%, 100% {
     transform: translateY(0) scale(1);
   }
   50% {
-    transform: translateY(-2px) scale(1.02);
+    /* 原 translateY(-2px) scale(1.02) */
+    transform: translateY(-2.1px) scale(1.021);
   }
 }
 
@@ -408,7 +423,8 @@ button {
     transform: scale(1) rotate(0deg);
   }
   50% {
-    transform: scale(1.04) rotate(2.5deg);
+    /* 原 scale(1.04) rotate(2.5deg) */
+    transform: scale(1.042) rotate(2.625deg);
   }
 }
 
@@ -417,7 +433,8 @@ button {
     transform: scale(1) rotate(0deg);
   }
   50% {
-    transform: scale(1.02) rotate(-2deg);
+    /* 原 scale(1.02) rotate(-2deg) */
+    transform: scale(1.021) rotate(-2.1deg);
   }
 }
 
@@ -426,7 +443,8 @@ button {
     transform: scale(1) translateY(0);
   }
   50% {
-    transform: scale(1.03) translateY(-1.5px);
+    /* 原 scale(1.03) translateY(-1.5px) */
+    transform: scale(1.0315) translateY(-1.575px);
   }
 }
 
@@ -435,7 +453,8 @@ button {
     transform: translateY(0) scale(1);
   }
   50% {
-    transform: translateY(-3px) scale(1.08);
+    /* 原 translateY(-3px) scale(1.08) */
+    transform: translateY(-3.15px) scale(1.084);
   }
 }
 
