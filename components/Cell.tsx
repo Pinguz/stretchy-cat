@@ -5,13 +5,20 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { CellType } from '../types';
+import { GAME_CONSTANTS, isCollectibleType } from '../constants';
+
+// 提到模块级，避免每次渲染都新建数组
+const OBSTACLE_TYPES = new Set([CellType.ROCK, CellType.BUSH, CellType.COUCH]);
 
 interface CellProps {
   type: CellType;
   isInPath: boolean;
   isHead: boolean;
   isTail: boolean;
+  /** 被玩家收集（来自 collectedItems） */
   isCollected: boolean;
+  /** 超时过期（来自该类型的全局 active 布尔取反） */
+  isExpired: boolean;
   pathIndex: number;
   currentPathLength: number; 
   connections: { up: boolean; down: boolean; left: boolean; right: boolean };
@@ -32,8 +39,9 @@ const Cell: React.FC<CellProps> = ({
   type, 
   isInPath, 
   isHead, 
-  isTail, 
-  isCollected, 
+  isTail,
+  isCollected,
+  isExpired,
   currentPathLength,
   connections, 
   headDirection,
@@ -48,27 +56,31 @@ const Cell: React.FC<CellProps> = ({
 }) => {
   const [isWarning, setIsWarning] = useState(false);
 
-  const isTimeLimited = [CellType.TREAT, CellType.YARN, CellType.STAR, CellType.PLANT, CellType.BOX].includes(type);
+  const isTimeLimited = isCollectibleType(type);
 
+  // 预警只看"进入窗口"这一个时刻，所以用单次 setTimeout 就够，
+  // 不需要原来那个每 100ms 唤醒一次的 setInterval。
+  // levelStartTime 在依赖里，暂停补偿/重开导致时间基准变化时会自动重排。
   useEffect(() => {
-    if (isCollected || !isTimeLimited || levelStartTime === 0 || expiryMs <= 0) {
+    if (isCollected || isExpired || !isTimeLimited || levelStartTime === 0 || expiryMs <= 0) {
       setIsWarning(false);
       return;
     }
 
-    const updateWarning = () => {
-      const elapsed = Date.now() - levelStartTime;
-      const remaining = expiryMs - elapsed;
-      setIsWarning(remaining <= 1500 && remaining > 0);
-    };
+    const remaining = expiryMs - (Date.now() - levelStartTime);
+    const warningMs = GAME_CONSTANTS.COLLECTIBLE_WARNING_TIME_MS;
 
-    const interval = setInterval(updateWarning, 100);
-    updateWarning();
-    return () => clearInterval(interval);
-  }, [isCollected, isTimeLimited, levelStartTime, expiryMs]);
+    if (remaining <= warningMs) {
+      setIsWarning(remaining > 0);
+      return;
+    }
+
+    const timer = setTimeout(() => setIsWarning(true), remaining - warningMs);
+    return () => clearTimeout(timer);
+  }, [isCollected, isExpired, isTimeLimited, levelStartTime, expiryMs]);
 
   // Obstacles are primarily tile_bush.png and tile_rock_01~07.png
-  const isObstacle = [CellType.ROCK, CellType.BUSH, CellType.COUCH].includes(type);
+  const isObstacle = OBSTACLE_TYPES.has(type);
 
   // Select non-repeating rock variant (1 to 7) for this level
   const rockSrc = useMemo(() => {
@@ -119,7 +131,11 @@ const Cell: React.FC<CellProps> = ({
       return null;
     }
 
-    if (isCollected || isInPath) return null;
+    // 退场 = 被玩家吃掉，或超时过期。
+    // 必须先判退场、后判 isInPath：猫踩上格子的同一帧里两个值同时为 true，
+    // 先判 isInPath 会把道具直接抹掉，收集动画永远看不到。
+    const isExiting = isCollected || isExpired;
+    if (!isExiting && isInPath) return null;
 
     let elementSrc = '';
     let elementAlt = '';
@@ -154,8 +170,26 @@ const Cell: React.FC<CellProps> = ({
       return null;
     }
 
+    // 退场用纯 CSS 状态机：z-40 要盖过猫头(z-30)，否则动画全被猫挡住等于没做。
+    // 静态 opacity-0 是兜底 —— 锁住终态主要靠动画的 fill-mode: both，
+    // 但 prefers-reduced-motion 下动画被关掉时，靠这个静态类接管。
+    // 退场后元素保留在 DOM 里不 unmount：重开关卡时 class 切回普通态即可自动恢复可见，
+    // 不需要额外 state、定时器或强制重建。
+    // 三元必须 isCollected 优先：已吃掉的格子若在整类道具超时时改播 fade，
+    // 动画会重启并从 opacity:1 播起，出现"二次出现再缩没"的鬼影。
+    // 外层只管透明度：award_bg.png 和格子底图的边框是重叠对齐的，
+    // 让它跟着 scale 会分离出一圈缩小的方形描边（见 index.css 里 awardFadeOut 的注释）。
+    const wrapClass = isExiting
+      ? `z-40 opacity-0 ${isCollected ? 'animate-collect-fade' : 'animate-expire-fade'}`
+      : 'z-20';
+
+    // 缩放在前景这一层：退场时把待机动画换成"收集放大"/"过期缩小"
+    const innerAnimClass = isExiting
+      ? (isCollected ? 'animate-collect-pop' : 'animate-expire-shrink')
+      : elementAnimClass;
+
     return (
-      <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-20 select-none">
+      <div className={`absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none select-none ${wrapClass}`}>
         {/* Static Background Layer: completely still, background does not move */}
         <img
           src="/assets/award_bg.png"
@@ -164,7 +198,7 @@ const Cell: React.FC<CellProps> = ({
         />
 
         {/* Dynamic Foreground Element Layer: only the element animates */}
-        <div className={`relative z-10 w-full h-full flex items-center justify-center pointer-events-none transition-transform ${elementAnimClass}`}>
+        <div className={`relative z-10 w-full h-full flex items-center justify-center pointer-events-none transition-transform ${innerAnimClass}`}>
           <img
             src={elementSrc}
             alt={elementAlt}

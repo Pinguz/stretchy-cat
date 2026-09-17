@@ -9,9 +9,10 @@ interface GameOverProps {
   type: 'win' | 'lose';
   score: number;
   onAction: () => void;
+  onBackHome: () => void;
 }
 
-const GameOver: React.FC<GameOverProps> = ({ type, score, onAction }) => {
+const GameOver: React.FC<GameOverProps> = ({ type, score, onAction, onBackHome }) => {
   const isWin = type === 'win';
   const popupBackground = isWin
     ? '/assets/ui_popup_win_bg.png'
@@ -46,7 +47,7 @@ const GameOver: React.FC<GameOverProps> = ({ type, score, onAction }) => {
             />
           </button>
           <button
-            onClick={onAction}
+            onClick={onBackHome}
             className="w-[43%] cursor-pointer transition-transform active:scale-95"
             title="返回主页"
             aria-label="返回主页"

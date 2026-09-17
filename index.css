@@ -80,7 +80,8 @@ body {
 }
 
 .game-decor-cat {
-  bottom: calc(var(--footer-clearance) - 20px);
+  /* 比路牌再低 24px，避开计时器右侧的重置按钮 */
+  bottom: calc(var(--footer-clearance) - 44px);
 }
 
 .ui-board-frame {
@@ -228,6 +229,16 @@ body {
   }
 
   body {
+    animation: none !important;
+  }
+
+  /* 道具退场降级为瞬间消失。
+     注意不能只写 animation: none 就完事 —— 终态隐形本来靠 fill-mode 实现，
+     关掉动画后必须由元素自身的静态 opacity-0 接管（见 Cell.tsx 的 wrapClass）。 */
+  .animate-collect-fade,
+  .animate-collect-pop,
+  .animate-expire-fade,
+  .animate-expire-shrink {
     animation: none !important;
   }
 }
@@ -488,6 +499,78 @@ header:has(+ #landing-page) {
 
   .animate-award-warning {
     animation: awardWarning 0.5s ease-in-out infinite;
+  }
+
+  /* 奖励道具退场 —— 必须拆成"外层只淡出 + 内层做缩放"两层。
+     award_bg.png 是一块和 tile_empty.png 边框完全对齐的方底板，静止时看不出来；
+     一旦跟着外层一起 scale，它的深色描边就会脱离格子底图的边框，
+     在格子里露出一圈不断缩小的方形轮廓。所以缩放只能作用在前景元素那一层。 */
+
+  /* 外层（道具底板 + 前景一起）：只改透明度，不做任何位移缩放 */
+  @keyframes awardFadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  /* 内层（只有前景元素）：被玩家收集 —— 放大 */
+  @keyframes collectPop {
+    0% {
+      transform: scale(1);
+    }
+    55% {
+      transform: scale(1.35);
+    }
+    100% {
+      transform: scale(1.6);
+    }
+  }
+
+  /* 内层（只有前景元素）：超时过期 —— 缩小 */
+  @keyframes expireShrink {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(0.6);
+    }
+  }
+
+  /* fill-mode: both 是必须的 —— 元素退场后不会 unmount，终态隐形完全靠它
+     把 opacity 锁在 0。缺了它动画播完就会弹回可见。 */
+  .animate-collect-fade {
+    animation: awardFadeOut 260ms ease-out both;
+  }
+
+  .animate-expire-fade {
+    animation: awardFadeOut 300ms ease-in both;
+  }
+
+  .animate-collect-pop {
+    animation: collectPop 260ms ease-out both;
+  }
+
+  .animate-expire-shrink {
+    animation: expireShrink 300ms ease-in both;
+  }
+
+  /* 积分飘字（原先内联在 App.tsx 的 <style> 里） */
+  @keyframes floatUpFade {
+    0% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-35px) scale(1.3);
+      opacity: 0;
+    }
+  }
+
+  .animate-float-up {
+    animation: floatUpFade 1.8s ease-out forwards;
   }
 }
 

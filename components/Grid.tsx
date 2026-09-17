@@ -5,14 +5,14 @@
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { LevelData, Point, CellType } from '../types';
-import { GAME_CONSTANTS } from '../constants';
+import { collectibleLifetimeMs } from '../constants';
 import Cell from './Cell';
 
 interface GridProps {
   level: LevelData;
   path: Point[];
   timeBonuses?: { id: number; x: number; y: number; text: string; color?: string; type?: 'time' | 'score' }[];
-  collectedMap: Set<string>;
+  collectedItems: string[];
   isTreatActive: boolean;
   isYarnActive: boolean;
   isPlantActive?: boolean;
@@ -23,9 +23,11 @@ interface GridProps {
 }
 
 const Grid: React.FC<GridProps> = ({ 
-  level, path, timeBonuses = [], collectedMap, isTreatActive, isYarnActive, isPlantActive = true, isBoxActive = true, levelStartTime, onCellMouseDown, onCellMouseEnter 
+  level, path, timeBonuses = [], collectedItems, isTreatActive, isYarnActive, isPlantActive = true, isBoxActive = true, levelStartTime, onCellMouseDown, onCellMouseEnter
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
+
+  const collectedSet = useMemo(() => new Set(collectedItems), [collectedItems]);
 
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -62,7 +64,15 @@ const Grid: React.FC<GridProps> = ({
     };
   }, [level.width, level.height, windowSize]);
 
-  const getPathIndex = (x: number, y: number) => path.findIndex(p => p.x === x && p.y === y);
+  // 一次遍历建索引，替代原来每格调一次 path.findIndex 的 O(cells × path)。
+  // 取用必须写 `?? -1`：起点格的 index 是 0，用 `||` 会被当成 -1，猫头/尾巴会直接渲染不出来。
+  const pathIndexMap = useMemo(() => {
+    const map = new Map<number, number>();
+    path.forEach((p, i) => map.set(p.y * level.width + p.x, i));
+    return map;
+  }, [path, level.width]);
+
+  const getPathIndex = (x: number, y: number) => pathIndexMap.get(y * level.width + x) ?? -1;
 
   // Direction that the body faces based on drag into adjacent cell path[1]
   const tailDirection: 'up' | 'down' | 'left' | 'right' = useMemo(() => {
@@ -153,19 +163,11 @@ const Grid: React.FC<GridProps> = ({
               : cellType === CellType.BOX 
               ? isBoxActive 
               : true;
-            const isCollected = collectedMap.has(coordKey) || !isActive;
+            // 拆成两个独立状态：Cell 需要用它们区分"被玩家吃掉"和"超时消失"两种退场动画
+            const isCollected = collectedSet.has(coordKey);
+            const isExpired = !isActive;
+            const expiryMs = collectibleLifetimeMs(cellType, level.targetCount);
 
-            let expiryMs = 0;
-            if (cellType === CellType.TREAT) {
-              expiryMs = GAME_CONSTANTS.TREAT_MIN_LIFETIME_MS + (level.targetCount * GAME_CONSTANTS.TREAT_SCALE_FACTOR_MS);
-            } else if (cellType === CellType.YARN || cellType === CellType.STAR) {
-              expiryMs = GAME_CONSTANTS.YARN_MIN_LIFETIME_MS + (level.targetCount * GAME_CONSTANTS.YARN_SCALE_FACTOR_MS);
-            } else if (cellType === CellType.PLANT) {
-              expiryMs = GAME_CONSTANTS.PLANT_MIN_LIFETIME_MS + (level.targetCount * GAME_CONSTANTS.PLANT_SCALE_FACTOR_MS);
-            } else if (cellType === CellType.BOX) {
-              expiryMs = GAME_CONSTANTS.BOX_MIN_LIFETIME_MS + (level.targetCount * GAME_CONSTANTS.BOX_SCALE_FACTOR_MS);
-            }
-            
             const connections = { up: false, down: false, left: false, right: false };
             if (pathIndex !== -1) {
               const neighbors = [path[pathIndex - 1], path[pathIndex + 1]].filter(Boolean);
@@ -200,6 +202,7 @@ const Grid: React.FC<GridProps> = ({
                   isHead={pathIndex === path.length - 1 && path.length > 0}
                   isTail={pathIndex === 0 && path.length > 0}
                   isCollected={isCollected}
+                  isExpired={isExpired}
                   pathIndex={pathIndex}
                   currentPathLength={path.length}
                   connections={connections}
