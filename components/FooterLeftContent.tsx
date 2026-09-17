@@ -17,10 +17,10 @@ const FooterLeftContent: React.FC<FooterLeftContentProps> = ({
   score
 }) => {
   return (
-    <div className="relative w-[86vw] max-w-[420px] mx-auto aspect-[944/153] select-none">
+    <div className="relative w-[86vw] max-w-[420px] mx-auto ratio-footer-bar select-none">
       {/* Authentic bottom bar graphic with icons and coral button slot */}
       <img 
-        src="/assets/ui_btm_reset.png" 
+        src="./assets/ui_btm_reset.png" 
         alt="Bottom Bar" 
         className="absolute inset-0 w-full h-full object-fill pointer-events-none filter drop-shadow-md select-none" 
       />

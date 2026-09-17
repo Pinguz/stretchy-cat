@@ -3,24 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Google+Sans:opsz,wght@17..18,400;17..18,500&display=swap"
-      rel="stylesheet"
-    />
-    <title>Stretchy Cat</title>
+    <title>伸缩猫 Stretch Cat</title>
     <meta name="description" content="Stretch the cat and fill every space on the board, then end at the finish flag. Gather fish and stars to earn extra time as you race against the clock." />
-  <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      body {
-        -webkit-text-size-adjust: 100%;
-        text-size-adjust: 100%;
-        font-family: 'Google Sans', sans-serif;
-      }
-    </style>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <!--
+      这里原来挂着两个外链：
+      1) fonts.googleapis.com 的 Google Sans —— 小工具容器不联网，外链字体一律加载不到，
+         改成 tailwind.config.js 里的系统字体栈；
+      2) cdn.tailwindcss.com —— 既是外链，运行时又用了 new Function()（容器明令禁止），
+         改成构建期用 tailwindcss v3 编译成静态 CSS（见 postcss.config.js）。
+    -->
+    <!--
+      这里不写 index.css 的 <link>：dev 模式由 vite.config.ts 的 minitoolDev 插件注入，
+      构建产物由 minitoolBuild 插件注入指向 ./assets/index.css 的链接。
+      原因是不能让 index.css 进 Vite 的模块图 —— iife 格式下 Vite 会把 CSS 塞进 JS、
+      运行时用 document.createElement('style') 注入，产物里就没有独立的 CSS 文件可审计了
+      （细节见 scripts/build-css.mjs 顶部注释）。
+    -->
+  </head>
   <body>
     <div id="root"></div>
+    <!--
+      音效数据（base64）必须排在入口脚本之前：App 一挂载就会解码全部音效。
+      放 body 末尾而不是 head，是为了不让这 290 KB 的 base64 阻塞首屏渲染。
+      文件由 scripts/build-audio.mjs 生成，不进版本库（见 .gitignore）。
+      容器只允许 .js/.json 这类类型进包，音频文件本身进不去；而 <audio> 又被禁止用
+      data: 媒体源，所以只能这样内嵌 + 用 Web Audio API 解码播放。
+    -->
+    <script src="./audio/sfx-data.js"></script>
     <script type="module" src="/index.tsx"></script>
-</body>
+  </body>
 </html>

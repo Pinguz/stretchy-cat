@@ -43,7 +43,7 @@ const InfoDialog: React.FC<InfoDialogProps> = ({ isOpen, onClose }) => {
 
         {/* Mascot & Header */}
         <div className="w-14 h-14 mt-1 mb-1.5">
-          <img src="/assets/ui_cat_head.png" alt="Cat Head" className="w-full h-full object-contain filter drop-shadow-sm select-none" />
+          <img src="./assets/ui_cat_head.png" alt="Cat Head" className="w-full h-full object-contain filter drop-shadow-sm select-none" />
         </div>
         <h3 className="text-[#59371D] text-xl font-black">伸缩猫猫大冒险</h3>
         <p className="text-xs text-[#876346] font-medium mb-3">拉长猫咪身躯，填满草地！</p>
@@ -51,9 +51,9 @@ const InfoDialog: React.FC<InfoDialogProps> = ({ isOpen, onClose }) => {
         {/* Rule Items */}
         <div className="w-full space-y-2 text-[#5C3B21] text-sm">
           {/* Obstacles info */}
-          <div className="flex items-center gap-2.5 bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
+          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
             <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-[#DDC6A8] p-0.5">
-              <img src="/assets/tile_bush.png" alt="Obstacles" className="w-full h-full object-contain" />
+              <img src="./assets/tile_bush.png" alt="Obstacles" className="w-full h-full object-contain" />
             </div>
             <div className="text-xs leading-snug">
               <strong className="text-[#523319] block text-xs">障碍物（灌木 / 岩石）</strong>
@@ -62,10 +62,10 @@ const InfoDialog: React.FC<InfoDialogProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Fish */}
-          <div className="flex items-center gap-2.5 bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
+          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
             <div className="w-8 h-8 flex-shrink-0 relative flex items-center justify-center rounded-lg overflow-hidden border border-[#DDC6A8]">
-              <img src="/assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-              <img src="/assets/award_fish.png" alt="Fish" className="w-[50%] h-[50%] object-contain relative z-10 animate-award-bob" />
+              <img src="./assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+              <img src="./assets/award_fish.png" alt="Fish" className="w-[50%] h-[50%] object-contain relative z-10 animate-award-bob" />
             </div>
             <div className="text-xs leading-snug">
               <strong className="text-[#523319] block text-xs">小鱼补时 (+5秒)</strong>
@@ -74,10 +74,10 @@ const InfoDialog: React.FC<InfoDialogProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Star & Plant & Box */}
-          <div className="flex items-center gap-2.5 bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
+          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
             <div className="w-8 h-8 flex-shrink-0 relative flex items-center justify-center rounded-lg overflow-hidden border border-[#DDC6A8]">
-              <img src="/assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-              <img src="/assets/award_star.png" alt="Star" className="w-[42%] h-[42%] object-contain relative z-10 animate-award-twinkle" />
+              <img src="./assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+              <img src="./assets/award_star.png" alt="Star" className="w-[42%] h-[42%] object-contain relative z-10 animate-award-twinkle" />
             </div>
             <div className="text-xs leading-snug">
               <strong className="text-[#523319] block text-xs">星星道具 (+50分)</strong>
@@ -85,10 +85,10 @@ const InfoDialog: React.FC<InfoDialogProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
+          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
             <div className="w-8 h-8 flex-shrink-0 relative flex items-center justify-center rounded-lg overflow-hidden border border-[#DDC6A8]">
-              <img src="/assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-              <img src="/assets/award_plant.png" alt="Plant" className="w-[44%] h-[44%] object-contain relative z-10 animate-award-sway" />
+              <img src="./assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+              <img src="./assets/award_plant.png" alt="Plant" className="w-[44%] h-[44%] object-contain relative z-10 animate-award-sway" />
             </div>
             <div className="text-xs leading-snug">
               <strong className="text-[#523319] block text-xs">盆栽道具 (+100分)</strong>
@@ -96,10 +96,10 @@ const InfoDialog: React.FC<InfoDialogProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
+          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
             <div className="w-8 h-8 flex-shrink-0 relative flex items-center justify-center rounded-lg overflow-hidden border border-[#DDC6A8]">
-              <img src="/assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-              <img src="/assets/award_box.png" alt="Box" className="w-[46%] h-[46%] object-contain relative z-10 animate-award-jiggle" />
+              <img src="./assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+              <img src="./assets/award_box.png" alt="Box" className="w-[46%] h-[46%] object-contain relative z-10 animate-award-jiggle" />
             </div>
             <div className="text-xs leading-snug">
               <strong className="text-[#523319] block text-xs">神秘宝箱 (+150分)</strong>
@@ -108,9 +108,9 @@ const InfoDialog: React.FC<InfoDialogProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Goal */}
-          <div className="flex items-center gap-2.5 bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
+          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
             <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-[#DDC6A8] p-0.5">
-              <img src="/assets/ui_finish_flag.png" alt="Flag" className="w-full h-full object-contain" />
+              <img src="./assets/ui_finish_flag.png" alt="Flag" className="w-full h-full object-contain" />
             </div>
             <div className="text-xs leading-snug">
               <strong className="text-[#523319] block text-xs">终点方格旗</strong>

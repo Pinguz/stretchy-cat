@@ -109,6 +109,10 @@ const Grid: React.FC<GridProps> = ({
         style={{
           gridTemplateColumns: `repeat(${level.width}, ${tileSize}px)`,
           gridTemplateRows: `repeat(${level.height}, ${tileSize}px)`,
+          // 两条都要写，顺序不能反：grid-gap 是 Chrome 61 认得的老名字，
+          // gap 简写要 Chrome 66+。旧内核丢弃 gap、留下 grid-gap；
+          // 新内核两条都认，写在后面的 gap 生效。格子一旦没了间距就会挤成一坨，这里不能只写一条。
+          gridGap: `${gap}px`,
           gap: `${gap}px`,
           padding: `${gap + 3}px`,
           touchAction: 'none',

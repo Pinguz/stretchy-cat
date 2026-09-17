@@ -2,25 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Media query alias for short screens */
-@custom-variant short (@media (max-height: 920px));
-
-/* Media query alias for compact screens such as Macbook Air */
-@custom-variant compact (@media (max-height: 1024px));
-
-@theme {
-  --font-display: "Google Sans",
-  sans-serif;
-  --font-sans: "Google Sans",
-  sans-serif;
-}
+/* ============================================================
+   小红书小工具兼容说明
+   容器基线是 Android 8.1 出场的 Chrome / WebView 61。这份样式表按
+   「Chrome 61 可用的基线层 + 能力检测后的增强层」组织：
+   - 基线层只用 Chrome 61 认得的选择器与声明，保证布局和核心交互成立；
+   - 增强层用 @supports 或包内经典脚本加在 <html> 上的 class 启用。
+   注意浏览器会**静默丢弃**无法解析的声明，不像 JS 那样抛异常 ——
+   所以凡是晚于 Chrome 61 的能力，都必须先写一份旧写法兜底。
+   ============================================================ */
 
 :root {
   --header-mobile-height: 84px;
   --header-height: 80px;
-  --footer-bottom-gap: max(48px, calc(env(safe-area-inset-bottom) + 16px));
-  --footer-height: calc(min(86vw, 420px) * 0.1623 + 12px);
+
+  /* 这里先给死值。min() / max() / env() 都是 Chrome 69+ 才有的能力，
+     直接写在自定义属性里，旧内核会把整条 --var 判为无效，
+     连带所有 var() 引用它的地方一起作废（底部留白归零、装饰贴到屏幕边上）。
+     增强层见下面的 @supports (padding: max(0px))。 */
+  --footer-bottom-gap: 48px;
+  --footer-height: calc(86vw * 0.1623 + 12px);
   --footer-clearance: calc(var(--footer-bottom-gap) + var(--footer-height) + 44px);
+}
+
+@supports (padding: max(0px)) {
+  :root {
+    /* 安全区同时兼容两种来源：真机是 env() 真实值，PC 模拟器由容器注入 --safe-area-* 变量。
+       两者都没给时退回 0px，不会让整条声明失效。 */
+    --footer-bottom-gap: max(48px, calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px));
+    --footer-height: calc(min(86vw, 420px) * 0.1623 + 12px);
+  }
 }
 
 html,
@@ -46,8 +57,15 @@ body {
   text-size-adjust: 100%;
 }
 
+/* 长按弹出系统菜单在小工具里本来就是禁用的，这里一并把长按菜单和双击缩放关掉，
+   避免拖动棋盘时被系统的长按手势抢走。 */
+html {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+
 .game-scene {
-  background-image: url('/assets/bg_mobile.png');
+  background-image: url('bg_mobile.png');
   background-position: center center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -57,14 +75,27 @@ body {
   padding-bottom: var(--footer-clearance);
 }
 
+/* 基线：固定值。增强：带上安全区的 max()。 */
 .game-main-content {
-  padding-top: max(80px, calc(env(safe-area-inset-top) + 64px));
+  padding-top: 80px;
 }
 
 .game-header {
-  top: max(8px, calc(env(safe-area-inset-top) + 8px));
+  top: 8px;
 }
 
+@supports (padding-top: max(0px)) {
+  .game-main-content {
+    padding-top: max(80px, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 64px));
+  }
+
+  .game-header {
+    top: max(8px, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px));
+  }
+}
+
+/* 这一条必须排在上面两个规则之后：≥640px 时用固定 140px，
+   否则会被增强层里的 max() 值盖掉。 */
 @media (min-width: 640px) {
   .game-main-content {
     padding-top: 140px;
@@ -101,137 +132,224 @@ body {
   stroke-width: 3;
 }
 
-@view-transition {
-  navigation: auto;
+/* ---------- Chrome 61 兼容补充层（必须排在 @tailwind utilities 之后） ---------- */
+
+/* Tailwind 的 .inset-0 生成的是 inset 简写，那是 Chrome 87+ 才有的属性，
+   旧内核会把整条声明丢掉，绝对定位元素会掉回静态位置 —— 棋盘上大量
+   `absolute inset-0 w-full h-full` 的图层会全部错位。这里用物理属性补一份等价规则；
+   新内核上取值相同，没有副作用。 */
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 
-::view-transition-group(root) {
-  animation-duration: 0.3s;
+/* ---- Flex gap 基线层 ----
+   Chrome 61 完全不认识 flex 容器上的 gap（Chrome 84+ 才有），Tailwind 生成的
+   .gap-* 在旧内核被整条丢弃，间距直接变 0。基线用「相邻子项单边 margin」复刻同样的
+   行内间距；增强层由 index.tsx 里的**布局行为检测**给 <html> 加 .supports-flex-gap，
+   此时 gap 生效、margin 归零，两份间距不会叠加。
+   不能拿 @supports (gap: 1px) 或 CSS.supports('gap','1px') 当判据 —— 那只证明浏览器
+   认识这个属性和值，不能证明 gap 在 flex 布局里真的生效。 */
+.flow-gap-header > * + * {
+  margin-left: 6px;
 }
 
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.3s;
-  animation-timing-function: ease-in-out;
+.flow-gap-badges > * + * {
+  margin-left: 3px;
 }
 
-::view-transition-old(root) {
-  animation-name: fade-out;
+.flow-gap-info-row > * + * {
+  margin-left: 10px;
 }
 
-::view-transition-new(root) {
-  animation-name: fade-in;
+.flow-gap-dialog-actions > * + * {
+  margin-left: 5%;
 }
 
-@keyframes fade-out {
-  from {
-    opacity: 1;
+@media (min-width: 640px) {
+  .flow-gap-header > * + * {
+    margin-left: 8px;
   }
 
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@property --gradient-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes rotate-gradient {
-  from {
-    --gradient-angle: 0deg;
-  }
-
-  to {
-    --gradient-angle: 360deg;
+  .flow-gap-badges > * + * {
+    margin-left: 4px;
   }
 }
 
-.rainbow-border {
-  border: 2px solid transparent;
-  background-image:
-    linear-gradient(#000, #000),
-    conic-gradient(from var(--gradient-angle),
-      #4285f4,
-      #bb55a1,
-      #ea4335,
-      #fbbc04,
-      #b9d84c,
-      #38a852,
-      #4285f4);
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
+.supports-flex-gap .flow-gap-header {
+  column-gap: 6px;
 }
 
-.rainbow-border__sm {
-  backface-visibility: hidden;
-  background-origin: padding-box, border-box;
-  border: 1.2px solid transparent;
-  box-shadow: inset 0 0 0 0.35px rgba(0, 0, 0, 0.18);
+.supports-flex-gap .flow-gap-badges {
+  column-gap: 3px;
 }
 
-.rainbow-border-2 {
-  border: 2px solid transparent;
-  background-image:
-    linear-gradient(#000, #000),
-    conic-gradient(from var(--gradient-angle) at 50% 50.12%,
-    #4285F4 142.8739893436432deg,
-    #BB55A1 175.78184008598328deg,
-    #EA4335 194.22826051712036deg,
-    #FBBC04 246.98917865753174deg,
-    #B9D84C 268.67698431015015deg,
-    #38A852 305.1065754890442deg,
-    #38A852 330.3632426261902deg,
-    #4285F4 353.76710414886475deg);
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
+.supports-flex-gap .flow-gap-info-row {
+  column-gap: 10px;
 }
 
-.rainbow-border-2__sm {
-  backface-visibility: hidden;
-  background-origin: padding-box, border-box;
-  border: 1.2px solid transparent;
-  box-shadow: inset 0 0 0 0.35px rgba(0, 0, 0, 0.18);
+.supports-flex-gap .flow-gap-dialog-actions {
+  column-gap: 5%;
 }
 
-.animate-rotate-gradient {
-  animation: rotate-gradient 7s linear infinite;
-}
-
-/* Fallback for browsers without View Transition API */
-@supports not (view-transition-name: none) {
-  body {
-    animation: fadeIn 0.3s ease-in-out;
+@media (min-width: 640px) {
+  .supports-flex-gap .flow-gap-header {
+    column-gap: 8px;
   }
+
+  .supports-flex-gap .flow-gap-badges {
+    column-gap: 4px;
+  }
+}
+
+/* 复位规则的选择器多一层 class，优先级高于上面的 margin 基线，
+   所以不受媒体查询顺序影响。 */
+.supports-flex-gap .flow-gap-header > * + *,
+.supports-flex-gap .flow-gap-badges > * + *,
+.supports-flex-gap .flow-gap-info-row > * + *,
+.supports-flex-gap .flow-gap-dialog-actions > * + * {
+  margin-left: 0;
+}
+
+/* ---- 比例盒基线层 ----
+   aspect-ratio 是 Chrome 88+ 的能力。这里按元素实际会被渲染的宽度把高度算出来写死，
+   再用 @supports 切回 aspect-ratio。数值就是各自的宽高比换算结果，改动尺寸时两边要一起改。
+   注意：新内核上 @supports 里的 height:auto 会覆盖下面的固定高度和媒体查询，所以
+   这个块必须放在最后。 */
+.ratio-level-banner {
+  /* 116px ÷ (271/196) */
+  height: 83.9px;
+}
+
+.ratio-timer {
+  /* 184px ÷ (315/153) */
+  height: 89.4px;
+}
+
+@media (min-width: 640px) {
+  .ratio-level-banner {
+    /* 140px ÷ (271/196) */
+    height: 101.3px;
+  }
+
+  .ratio-timer {
+    /* 207px ÷ (315/153) */
+    height: 100.5px;
+  }
+}
+
+.ratio-footer-bar {
+  /* 宽度 min(86vw, 420px)，高度 = 宽度 ÷ (944/153) */
+  height: 13.938vw;
+  max-height: 68.1px;
+}
+
+.ratio-popup {
+  /* 宽度 min(100vw - 24px, 430px)，高度 = 宽度 ÷ (814/979) */
+  height: calc((100vw - 24px) * 1.2027);
+  max-height: 517.2px;
+}
+
+@supports (aspect-ratio: 1 / 1) {
+  .ratio-level-banner {
+    height: auto;
+    max-height: none;
+    aspect-ratio: 271 / 196;
+  }
+
+  .ratio-timer {
+    height: auto;
+    max-height: none;
+    aspect-ratio: 315 / 153;
+  }
+
+  .ratio-footer-bar {
+    height: auto;
+    max-height: none;
+    aspect-ratio: 944 / 153;
+  }
+
+  .ratio-popup {
+    height: auto;
+    max-height: none;
+    aspect-ratio: 814 / 979;
+  }
+}
+
+/* ---- 全屏高度 ----
+   dvh 是 Chrome 108+ 的单位，旧内核会丢弃整条声明、高度塌成 auto，底部按钮直接被切。
+   基线先给 100vh；能用动态视口单位时再换成 dvh（手机地址栏收起时 dvh 才是真实可见高度，
+   这正是之前 h-screen 把开始按钮顶出屏幕的原因）。 */
+.screen-home {
+  height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .screen-home {
+    height: 100dvh;
+  }
+}
+
+/* 首页顶部 / 底部留白：max() + env() 是 Chrome 69+ 的能力，先写死值兜底。
+   增强值同时兼容真机 env() 与 PC 模拟器注入的 --safe-area-* 变量。 */
+.home-top-gap {
+  margin-top: 20px;
+}
+
+.home-bottom-gap {
+  margin-bottom: 28px;
+}
+
+@supports (margin-top: max(1px, 2px)) {
+  .home-top-gap {
+    margin-top: max(20px, var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  }
+
+  .home-bottom-gap {
+    margin-bottom: max(28px, calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px));
+  }
+}
+
+/* ---- 焦点样式 ----
+   :focus-visible 是 Chrome 86+，旧内核整条规则作废、键盘焦点会彻底不可见。
+   基线用 :focus 保证焦点始终看得见，能用 :focus-visible 时再免掉鼠标点击的轮廓。 */
+*:focus {
+  outline: 2px solid #4275f4;
+  outline-offset: 2px;
+  border-radius: 2px;
+  transition: none;
+}
+
+/* @supports selector() 本身也是 Chrome 83+；旧内核把它当未知 at-rule 整块忽略，
+   上面那条基线就留下来了。能用 :focus-visible 时，才把鼠标点击的轮廓去掉。 */
+@supports selector(:focus-visible) {
+  *:focus {
+    outline: none;
+    transition: none;
+  }
+
+  *:focus-visible {
+    outline: 2px solid #4275f4;
+    outline-offset: 2px;
+    border-radius: 2px;
+    transition: none;
+  }
+}
+
+.enabled-pointer:not([disabled]),
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+/* Universal hover state */
+a,
+button {
+  transition: 0.4s opacity ease-in;
 }
 
 @media (prefers-reduced-motion: reduce) {
-
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none !important;
-  }
-
-  @view-transition {
-    navigation: none;
-  }
-
-  body {
-    animation: none !important;
-  }
-
   /* 道具退场降级为瞬间消失。
      注意不能只写 animation: none 就完事 —— 终态隐形本来靠 fill-mode 实现，
      关掉动画后必须由元素自身的静态 opacity-0 接管（见 Cell.tsx 的 wrapClass）。 */
@@ -243,334 +361,140 @@ body {
   }
 }
 
-@theme {
-  --animate-fade-in: fadeIn 1s ease-in-out;
-  --animate-slide-in-up: slideInUp 0.5s ease-out;
-  --animate-gradient: gradientShift 5s linear infinite;
-
-  @keyframes fadeIn {
-    0% {
-      opacity: 0;
-    }
-
-    100% {
-      opacity: 1;
-    }
+/* Award element floating/idle animations: Background stays still, element moves with refined low-amplitude */
+@keyframes awardBob {
+  0%, 100% {
+    transform: translateY(0) scale(1);
   }
-
-  @keyframes slideInUp {
-    0% {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-
-    100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes gradientShift {
-    0% {
-      background-position: 200% 0%;
-    }
-
-    100% {
-      background-position: 0% 0%;
-    }
-  }
-
-  @keyframes reversePing {
-    0% {
-      transform: scale(2);
-      opacity: 0;
-    }
-
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-
-  --animate-reverse-ping: reversePing 1s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-
-@layer base {
-
-  .enabled-pointer:not([disabled]),
-  button:not(:disabled) {
-    @apply cursor-pointer;
-  }
-
-  *:focus {
-    outline: none;
-    transition: none;
-  }
-
-  *:focus-visible {
-    --tw-ring-color: #4275f4;
-    --tw-ring-offset-width: 2px;
-    transition: none;
-    outline: var(--tw-ring-offset-width) solid var(--tw-ring-color);
-    outline-offset: var(--tw-ring-offset-width);
-    border-radius: 2px;
-  }
-
-  .focus-overflow:focus-visible {
-    outline-offset: calc(-1 * var(--tw-ring-offset-width));
+  50% {
+    transform: translateY(-2px) scale(1.02);
   }
 }
 
-/* Universal hover state */
-a,
-button {
-  transition: 0.4s opacity ease-in;
-}
-
-/* Since sibling links should lower opacity we need to set a hover "context" */
-@media (hover: hover) {
-
-  .hover-context:has(a:hover) a:not(:hover),
-  .hover-context:has(a:hover) button:not(:hover),
-  .hover-context:has(button:hover) button:not(:hover),
-  .hover-context:has(button:hover) a:not(:hover) {
-    opacity: 0.35;
-    transition: opacity 0.4s ease-in-out;
+@keyframes awardTwinkle {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
   }
-
-  .button-white {
-    transition: opacity 0.4s ease-in-out;
-  }
-
-  .button-white:hover {
-    opacity: 0.8;
+  50% {
+    transform: scale(1.04) rotate(2.5deg);
   }
 }
 
-/* Support for text Trim (for browsers that supports it) */
-.text-trim-both {
-  text-box-trim: trim-both;
-  text-box-edge: cap alphabetic;
-}
-
-.text-trim-start {
-  text-box-trim: trim-start;
-  text-box-edge: cap alphabetic;
-}
-
-.text-trim-end {
-  text-box-trim: trim-end;
-  text-box-edge: cap alphabetic;
-}
-
-.h-full-sans-nav {
-  @apply h-[calc(100dvh-var(--header-mobile-height))] lg:h-[calc(100dvh-var(--header-height))];
-}
-
-.min-h-full-sans-nav {
-  @apply min-h-[calc(100dvh-var(--header-mobile-height))] lg:min-h-[calc(100dvh-var(--header-height))];
-}
-
-.headline-big {
-  @apply text-[80px] lg:text-[140px] xl:text-[260px] leading-[0.9] font-medium tracking-[-3.84px] xl:tracking-[-10.4px];
-}
-
-.headline-medium {
-  @apply text-[40px] lg:text-[96px] leading-[1.1] tracking-[-1.92px] lg:tracking-[-3.84px] font-medium;
-}
-
-.content-wrapper {
-  @apply mx-auto px-[20px] md:px-[60px] max-w-[1440px];
-}
-
-header:has(+ #landing-page) {
-  @apply bg-black/50 fixed w-full;
-}
-
-.headline-play {
-  font-size: 260px;
-  letter-spacing: -10.4px;
-  line-height: 0.9;
-}
-
-@media screen and (max-width: 1440px) {
-  .headline-play {
-    font-size: clamp(96px, 10vw, 260px);
-    letter-spacing: -0.4vw;
-    line-height: 0.9;
+@keyframes awardSway {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.02) rotate(-2deg);
   }
 }
 
-.byline-play {
-  font-size: 24px;
-  line-height: 1.2;
-}
-
-@media screen and (max-width: 1440px) {
-  .byline-play {
-    font-size: clamp(16px, 2.5vw, 24px);
+@keyframes awardJiggle {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.03) translateY(-1.5px);
   }
 }
 
-@layer utilities {
-  .animate-label-out .text-trim-both {
-    animation: labelFadeOut 400ms ease forwards;
-    animation-delay: 3s;
-    display: inline-block;
-    margin-left: 10px;
-    max-width: 200px;
-    overflow: hidden;
+@keyframes awardWarning {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.08);
+  }
+}
+
+.animate-award-bob {
+  animation: awardBob 2s ease-in-out infinite;
+}
+
+.animate-award-twinkle {
+  animation: awardTwinkle 2.2s ease-in-out infinite;
+}
+
+.animate-award-sway {
+  animation: awardSway 2.5s ease-in-out infinite;
+}
+
+.animate-award-jiggle {
+  animation: awardJiggle 2.2s ease-in-out infinite;
+}
+
+.animate-award-warning {
+  animation: awardWarning 0.5s ease-in-out infinite;
+}
+
+/* 奖励道具退场 —— 必须拆成"外层只淡出 + 内层做缩放"两层。
+   award_bg.png 是一块和 tile_empty.png 边框完全对齐的方底板，静止时看不出来；
+   一旦跟着外层一起 scale，它的深色描边就会脱离格子底图的边框，
+   在格子里露出一圈不断缩小的方形轮廓。所以缩放只能作用在前景元素那一层。 */
+
+/* 外层（道具底板 + 前景一起）：只改透明度，不做任何位移缩放 */
+@keyframes awardFadeOut {
+  from {
     opacity: 1;
-    transform: translateY(0);
-    transition: max-width 400ms ease-in-out;
-    white-space: nowrap;
   }
-
-  @keyframes labelFadeOut {
-    to {
-      margin-left: 0;
-      max-width: 0;
-      opacity: 0;
-      transform: translateY(-2px);
-    }
-  }
-
-  /* Award element floating/idle animations: Background stays still, element moves with refined low-amplitude */
-  @keyframes awardBob {
-    0%, 100% {
-      transform: translateY(0) scale(1);
-    }
-    50% {
-      transform: translateY(-2px) scale(1.02);
-    }
-  }
-
-  @keyframes awardTwinkle {
-    0%, 100% {
-      transform: scale(1) rotate(0deg);
-    }
-    50% {
-      transform: scale(1.04) rotate(2.5deg);
-    }
-  }
-
-  @keyframes awardSway {
-    0%, 100% {
-      transform: scale(1) rotate(0deg);
-    }
-    50% {
-      transform: scale(1.02) rotate(-2deg);
-    }
-  }
-
-  @keyframes awardJiggle {
-    0%, 100% {
-      transform: scale(1) translateY(0);
-    }
-    50% {
-      transform: scale(1.03) translateY(-1.5px);
-    }
-  }
-
-  @keyframes awardWarning {
-    0%, 100% {
-      transform: translateY(0) scale(1);
-    }
-    50% {
-      transform: translateY(-3px) scale(1.08);
-    }
-  }
-
-  .animate-award-bob {
-    animation: awardBob 2s ease-in-out infinite;
-  }
-
-  .animate-award-twinkle {
-    animation: awardTwinkle 2.2s ease-in-out infinite;
-  }
-
-  .animate-award-sway {
-    animation: awardSway 2.5s ease-in-out infinite;
-  }
-
-  .animate-award-jiggle {
-    animation: awardJiggle 2.2s ease-in-out infinite;
-  }
-
-  .animate-award-warning {
-    animation: awardWarning 0.5s ease-in-out infinite;
-  }
-
-  /* 奖励道具退场 —— 必须拆成"外层只淡出 + 内层做缩放"两层。
-     award_bg.png 是一块和 tile_empty.png 边框完全对齐的方底板，静止时看不出来；
-     一旦跟着外层一起 scale，它的深色描边就会脱离格子底图的边框，
-     在格子里露出一圈不断缩小的方形轮廓。所以缩放只能作用在前景元素那一层。 */
-
-  /* 外层（道具底板 + 前景一起）：只改透明度，不做任何位移缩放 */
-  @keyframes awardFadeOut {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
-  }
-
-  /* 内层（只有前景元素）：被玩家收集 —— 放大 */
-  @keyframes collectPop {
-    0% {
-      transform: scale(1);
-    }
-    55% {
-      transform: scale(1.35);
-    }
-    100% {
-      transform: scale(1.6);
-    }
-  }
-
-  /* 内层（只有前景元素）：超时过期 —— 缩小 */
-  @keyframes expireShrink {
-    0% {
-      transform: scale(1);
-    }
-    100% {
-      transform: scale(0.6);
-    }
-  }
-
-  /* fill-mode: both 是必须的 —— 元素退场后不会 unmount，终态隐形完全靠它
-     把 opacity 锁在 0。缺了它动画播完就会弹回可见。 */
-  .animate-collect-fade {
-    animation: awardFadeOut 260ms ease-out both;
-  }
-
-  .animate-expire-fade {
-    animation: awardFadeOut 300ms ease-in both;
-  }
-
-  .animate-collect-pop {
-    animation: collectPop 260ms ease-out both;
-  }
-
-  .animate-expire-shrink {
-    animation: expireShrink 300ms ease-in both;
-  }
-
-  /* 积分飘字（原先内联在 App.tsx 的 <style> 里） */
-  @keyframes floatUpFade {
-    0% {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(-35px) scale(1.3);
-      opacity: 0;
-    }
-  }
-
-  .animate-float-up {
-    animation: floatUpFade 1.8s ease-out forwards;
+  to {
+    opacity: 0;
   }
 }
 
+/* 内层（只有前景元素）：被玩家收集 —— 放大 */
+@keyframes collectPop {
+  0% {
+    transform: scale(1);
+  }
+  55% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1.6);
+  }
+}
+
+/* 内层（只有前景元素）：超时过期 —— 缩小 */
+@keyframes expireShrink {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.6);
+  }
+}
+
+/* fill-mode: both 是必须的 —— 元素退场后不会 unmount，终态隐形完全靠它
+   把 opacity 锁在 0。缺了它动画播完就会弹回可见。 */
+.animate-collect-fade {
+  animation: awardFadeOut 260ms ease-out both;
+}
+
+.animate-expire-fade {
+  animation: awardFadeOut 300ms ease-in both;
+}
+
+.animate-collect-pop {
+  animation: collectPop 260ms ease-out both;
+}
+
+.animate-expire-shrink {
+  animation: expireShrink 300ms ease-in both;
+}
+
+/* 积分飘字（原先内联在 App.tsx 的 <style> 里） */
+@keyframes floatUpFade {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-35px) scale(1.3);
+    opacity: 0;
+  }
+}
+
+.animate-float-up {
+  animation: floatUpFade 1.8s ease-out forwards;
+}

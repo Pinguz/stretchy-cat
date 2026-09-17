@@ -12,7 +12,7 @@ import { GAME_CONSTANTS, collectibleLifetimeMs, COLLECTIBLE_SCORE, isCollectible
 import { useKeyboardControls } from './hooks/useKeyboardControls';
 
 import useAudio from "./services/audioService";
-import { getPath } from "./utils/path";
+import { getSoundKey } from "./utils/path";
 import InfoDialog from './components/InfoDialog';
 import HomeScreen from './components/HomeScreen';
 
@@ -54,12 +54,12 @@ const App: React.FC = () => {
 
   const { playForeground, preloadCache, soundEnabled, toggleSound } = useAudio();
   const audioFiles = [
-    getPath("/media/audio/sfx/stretchycat/backspace.mp3"),
-    getPath("/media/audio/sfx/stretchycat/stretchspace.mp3"),
-    getPath("/media/audio/sfx/stretchycat/YarnReward.mp3"),
-    getPath("/media/audio/sfx/stretchycat/FishReward.mp3"),
-    getPath("/media/audio/sfx/stretchycat/goal.mp3"),
-    getPath("/media/audio/sfx/global/win.mp3"),
+    getSoundKey("/media/audio/sfx/stretchycat/backspace.mp3"),
+    getSoundKey("/media/audio/sfx/stretchycat/stretchspace.mp3"),
+    getSoundKey("/media/audio/sfx/stretchycat/YarnReward.mp3"),
+    getSoundKey("/media/audio/sfx/stretchycat/FishReward.mp3"),
+    getSoundKey("/media/audio/sfx/stretchycat/goal.mp3"),
+    getSoundKey("/media/audio/sfx/global/win.mp3"),
   ];
 
   useEffect(() => {
@@ -177,7 +177,7 @@ const App: React.FC = () => {
       treats: 0, 
       collectedItems: []
     }));
-    playForeground(getPath("/media/audio/sfx/stretchycat/backspace.mp3"));
+    playForeground(getSoundKey("/media/audio/sfx/stretchycat/backspace.mp3"));
   }, [level, playForeground]);
 
   useEffect(() => {
@@ -264,11 +264,11 @@ const App: React.FC = () => {
       const id = ++bonusIdRef.current;
 
       if (cellType === CellType.TREAT) {
-        playForeground(getPath("/media/audio/sfx/stretchycat/FishReward.mp3"));
+        playForeground(getSoundKey("/media/audio/sfx/stretchycat/FishReward.mp3"));
         timeGainSeconds += GAME_CONSTANTS.TREAT_TIME_BONUS_SECONDS;
         floats.push({ id, x, y, text: `+${GAME_CONSTANTS.TREAT_TIME_BONUS_SECONDS}s`, color: 'text-white', type: 'time' });
       } else {
-        playForeground(getPath("/media/audio/sfx/stretchycat/YarnReward.mp3"));
+        playForeground(getSoundKey("/media/audio/sfx/stretchycat/YarnReward.mp3"));
         floats.push({ id, x, y, text: `+${COLLECTIBLE_SCORE[cellType] ?? 0}`, color: 'text-white', type: 'score' });
       }
     }
@@ -334,7 +334,7 @@ const App: React.FC = () => {
       const isAdjacent = (a: Point, b: Point) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
       if (!isAdjacent(last, p)) return prev;
       if (secondLast && p.x === secondLast.x && p.y === secondLast.y) {
-        playForeground(getPath("/media/audio/sfx/stretchycat/backspace.mp3"));
+        playForeground(getSoundKey("/media/audio/sfx/stretchycat/backspace.mp3"));
         return { 
           ...prev, 
           path: path.slice(0, -1), 
@@ -369,18 +369,18 @@ const App: React.FC = () => {
         scoreAdd += COLLECTIBLE_SCORE[cellType] ?? 0;
         if (cellType === CellType.TREAT) newTreats += 1;
       } else {
-        playForeground(getPath("/media/audio/sfx/stretchycat/stretchspace.mp3"));
+        playForeground(getSoundKey("/media/audio/sfx/stretchycat/stretchspace.mp3"));
       }
       const won = newPath.length === level.targetCount && cellType === CellType.SAUCER;
       if (won && !isWinProcessed.current) {
         isWinProcessed.current = true;
         isTransitioningRef.current = true;
         setTimeBonuses([]);
-        playForeground(getPath("/media/audio/sfx/stretchycat/goal.mp3"));
+        playForeground(getSoundKey("/media/audio/sfx/stretchycat/goal.mp3"));
         setTimeout(() => {
           if (levelIndex >= GAME_CONSTANTS.TOTAL_LEVELS) {
             setGameResult('win');
-            playForeground(getPath("/media/audio/sfx/global/win.mp3"));
+            playForeground(getSoundKey("/media/audio/sfx/global/win.mp3"));
           } else { 
             setLevelIndex(idx => idx + 1); 
           }
@@ -418,20 +418,23 @@ const App: React.FC = () => {
 
   return (
     <div 
-      // 这里必须用 h-screen（=100vh 大视口），不能用 h-[100dvh]：主内容是 justify-center 的，
+      // 这里必须用 h-screen（=100vh 大视口），不能换成动态视口高度：主内容是 justify-center 的，
       // 容器一旦跟着浏览器 UI 变矮，整块就会往上顶，关卡徽章/积分那行会钻到固定的 header 底下。
       // 100vh 恒定 = 大视口高度，顶部位置就固定了，多出来的高度由底部 --footer-clearance 的留白吃掉。
+      //（首页相反，用 .screen-home 走 dvh —— 因为它没有固定 header，怕的是按钮被切掉。）
+      // 注意别在注释里写出 Tailwind 任意值的原样写法：扫描器会把注释也当内容，
+      // 凭空生成一条产物里根本用不到的 100dvh 规则。
       className="game-scene relative w-full max-w-full h-screen overflow-hidden select-none font-sans flex flex-col justify-between items-center bg-[#9BD7FD]"
       onMouseUp={() => setGameState(prev => ({ ...prev, isDragging: false }))}
     >
       <img
-        src="/assets/ui_signpost.png"
+        src="./assets/ui_signpost.png"
         alt=""
         aria-hidden="true"
         className="game-decor-sign absolute left-[8px] z-0 block w-[72px] pointer-events-none select-none sm:left-[3%] sm:w-[110px]"
       />
       <img
-        src="/assets/ui_cat_sleep.png"
+        src="./assets/ui_cat_sleep.png"
         alt=""
         aria-hidden="true"
         className="game-decor-cat absolute right-[8px] z-0 block w-[108px] pointer-events-none select-none drop-shadow-[0_2px_3px_rgba(72,72,45,0.28)] sm:right-[3%] sm:w-[150px]"
@@ -454,9 +457,9 @@ const App: React.FC = () => {
       />
 
       {/* TOP HEADER */}
-      <header className="game-header fixed right-3 z-30 flex items-center gap-1.5 sm:right-4 sm:gap-2">
+      <header className="game-header fixed right-3 z-30 flex items-center flow-gap-header sm:right-4">
         {/* Right: Authentic Sound & Settings PNG Buttons */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center flow-gap-header">
           {/* Audio toggle button */}
           <button
             onClick={toggleSound}
@@ -464,7 +467,7 @@ const App: React.FC = () => {
             title={soundEnabled ? "静音音效" : "开启音效"}
           >
             <img 
-              src="/assets/ui_btn_volume.png" 
+              src="./assets/ui_btn_volume.png" 
               alt="Volume" 
               className={`w-full h-full object-contain ${!soundEnabled ? 'opacity-50 grayscale' : ''}`} 
             />
@@ -482,7 +485,7 @@ const App: React.FC = () => {
             title="游戏说明与帮助"
           >
             <img 
-              src="/assets/ui_btn_settings.png" 
+              src="./assets/ui_btn_settings.png" 
               alt="Settings" 
               className="w-full h-full object-contain" 
             />
@@ -497,10 +500,10 @@ const App: React.FC = () => {
           {/* Animated Board Container (Only the board scales/fades when switching levels) */}
           <div className={`transition-all duration-300 transform ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} flex flex-col items-center w-full`}>
             <div className="relative">
-              <div className="absolute bottom-[calc(100%+7.5px)] left-0 z-20 flex items-end gap-[3px] sm:gap-1">
-                <div className="relative w-[116px] sm:w-[140px] aspect-[271/196] flex items-center justify-center shrink-0">
+              <div className="absolute bottom-[calc(100%+7.5px)] left-0 z-20 flex items-end flow-gap-badges">
+                <div className="relative w-[116px] sm:w-[140px] ratio-level-banner flex items-center justify-center shrink-0">
                   <img 
-                    src="/assets/ui_level_banner.png" 
+                    src="./assets/ui_level_banner.png" 
                     alt="Level Banner" 
                     className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none filter drop-shadow-sm" 
                   />
@@ -510,15 +513,15 @@ const App: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <div className="relative w-[122px] h-[42px] sm:w-[148px] sm:h-[51px] aspect-[284/98] flex items-center justify-center shrink-0">
+                <div className="relative w-[122px] h-[42px] sm:w-[148px] sm:h-[51px] flex items-center justify-center shrink-0">
                   <img
-                    src="/assets/ui_points_badge.png"
+                    src="./assets/ui_points_badge.png"
                     alt="Points"
                     className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none filter drop-shadow-sm"
                   />
                   <div className="absolute inset-0 z-10">
                     <img
-                      src="/assets/award_star.png"
+                      src="./assets/award_star.png"
                       alt=""
                       aria-hidden="true"
                       className="absolute left-[10px] top-1/2 h-[52%] w-[22%] -translate-y-1/2 scale-[0.81] object-contain pointer-events-none select-none sm:left-[12px]"
@@ -557,9 +560,9 @@ const App: React.FC = () => {
 
           {/* TIMER BADGE (Independent of level switching animation - DOES NOT scale or fade) */}
           {timeLeft !== null && (
-            <div className="relative w-[184px] sm:w-[207px] aspect-[315/153] flex items-center justify-center mt-1 sm:mt-1.5 shrink-0">
+            <div className="relative w-[184px] sm:w-[207px] ratio-timer flex items-center justify-center mt-1 sm:mt-1.5 shrink-0">
               <img 
-                src="/assets/ui_timer.png" 
+                src="./assets/ui_timer.png" 
                 alt="Timer" 
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none filter drop-shadow-sm" 
               />
@@ -578,7 +581,7 @@ const App: React.FC = () => {
                 aria-label="重置猫咪位置"
               >
                 <img
-                  src="/assets/ui_btn_reset.png"
+                  src="./assets/ui_btn_reset.png"
                   alt="重置"
                   className="w-full h-full object-contain pointer-events-none select-none"
                 />

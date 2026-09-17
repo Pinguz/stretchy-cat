@@ -87,7 +87,7 @@ const Cell: React.FC<CellProps> = ({
     const rockNum = rockVariant && rockVariant >= 1 && rockVariant <= 7
       ? rockVariant
       : (((x * 5 + y * 11) % 7) + 1);
-    return `/assets/tile_rock_0${rockNum}.png`;
+    return `./assets/tile_rock_0${rockNum}.png`;
   }, [rockVariant, x, y]);
 
   // Dynamic transform for the cat body based on drag direction
@@ -110,7 +110,7 @@ const Cell: React.FC<CellProps> = ({
     if (type === CellType.BUSH || type === CellType.COUCH) {
       return (
         <img 
-          src="/assets/tile_bush.png" 
+          src="./assets/tile_bush.png" 
           alt="Bush" 
           className="w-full h-full object-contain pointer-events-none select-none" 
         />
@@ -144,25 +144,25 @@ const Cell: React.FC<CellProps> = ({
 
     // Fish (Treat) -> +5s time boost
     if (type === CellType.TREAT) {
-      elementSrc = '/assets/award_fish.png';
+      elementSrc = './assets/award_fish.png';
       elementAlt = 'Fish';
       elementSizeClass = 'w-[50%] h-[50%]';
       elementAnimClass = isWarning ? 'animate-award-warning' : 'animate-award-bob';
     } else if (type === CellType.YARN || type === CellType.STAR) {
       // Star (Yarn) -> +50 score
-      elementSrc = '/assets/award_star.png';
+      elementSrc = './assets/award_star.png';
       elementAlt = 'Star';
       elementSizeClass = 'w-[42%] h-[42%]';
       elementAnimClass = isWarning ? 'animate-award-warning' : 'animate-award-twinkle';
     } else if (type === CellType.PLANT) {
       // Plant bonus item -> +100 score
-      elementSrc = '/assets/award_plant.png';
+      elementSrc = './assets/award_plant.png';
       elementAlt = 'Plant Bonus';
       elementSizeClass = 'w-[44%] h-[44%]';
       elementAnimClass = isWarning ? 'animate-award-warning' : 'animate-award-sway';
     } else if (type === CellType.BOX) {
       // Box mystery bonus item -> +150 score
-      elementSrc = '/assets/award_box.png';
+      elementSrc = './assets/award_box.png';
       elementAlt = 'Box Bonus';
       elementSizeClass = 'w-[46%] h-[46%]';
       elementAnimClass = isWarning ? 'animate-award-warning' : 'animate-award-jiggle';
@@ -192,7 +192,7 @@ const Cell: React.FC<CellProps> = ({
       <div className={`absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none select-none ${wrapClass}`}>
         {/* Static Background Layer: completely still, background does not move */}
         <img
-          src="/assets/award_bg.png"
+          src="./assets/award_bg.png"
           alt="Award BG"
           className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none rounded-[4px]"
         />
@@ -429,13 +429,13 @@ const Cell: React.FC<CellProps> = ({
       */}
       {type === CellType.SAUCER ? (
         <img
-          src="/assets/ui_finish_flag.png"
+          src="./assets/ui_finish_flag.png"
           alt="Goal Tile"
           className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none rounded-[4px] z-10"
         />
       ) : (
         <img
-          src={isInPath ? "/assets/tile_cat_bg.png" : "/assets/tile_empty.png"}
+          src={isInPath ? "./assets/tile_cat_bg.png" : "./assets/tile_empty.png"}
           alt="Tile"
           className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none rounded-[4px]"
         />
@@ -456,13 +456,13 @@ const Cell: React.FC<CellProps> = ({
               <div className="relative w-[96%] h-[96%] flex items-center justify-center">
                 {/* Body seated at bottom */}
                 <img 
-                  src="/assets/ui_cat_body.png" 
+                  src="./assets/ui_cat_body.png" 
                   alt="Cat Body" 
                   className="absolute inset-0 w-full h-full object-contain filter drop-shadow-xs" 
                 />
                 {/* Head layered on top */}
                 <img 
-                  src="/assets/ui_cat_head.png" 
+                  src="./assets/ui_cat_head.png" 
                   alt="Cat Head" 
                   className="absolute inset-0 w-full h-full object-contain filter drop-shadow-sm transform hover:scale-105 transition-transform" 
                 />
@@ -481,7 +481,7 @@ const Cell: React.FC<CellProps> = ({
                 }}
               >
                 <img 
-                  src="/assets/ui_cat_body.png" 
+                  src="./assets/ui_cat_body.png" 
                   alt="Cat Body" 
                   className="w-full h-full object-contain" 
                 />
@@ -499,7 +499,7 @@ const Cell: React.FC<CellProps> = ({
                 }}
               >
                 <img 
-                  src="/assets/ui_cat_head.png" 
+                  src="./assets/ui_cat_head.png" 
                   alt="Cat Head" 
                   className="w-full h-full object-contain select-none" 
                 />

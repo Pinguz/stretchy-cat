@@ -15,12 +15,12 @@ interface GameOverProps {
 const GameOver: React.FC<GameOverProps> = ({ type, score, onAction, onBackHome }) => {
   const isWin = type === 'win';
   const popupBackground = isWin
-    ? '/assets/ui_popup_win_bg.png'
-    : '/assets/ui_popup_timeout_bg.png';
+    ? './assets/ui_popup_win_bg.png'
+    : './assets/ui_popup_timeout_bg.png';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm select-none animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[430px] -translate-y-[4vh] aspect-[814/979] overflow-hidden">
+      <div className="relative w-full max-w-[430px] -translate-y-[4vh] ratio-popup overflow-hidden">
         <img
           src={popupBackground}
           alt={isWin ? '通关提示' : '时间到提示'}
@@ -33,7 +33,7 @@ const GameOver: React.FC<GameOverProps> = ({ type, score, onAction, onBackHome }
           </span>
         </div>
 
-        <div className="absolute bottom-[5%] left-[9%] right-[9%] z-10 flex items-center justify-center gap-[5%]">
+        <div className="absolute bottom-[5%] left-[9%] right-[9%] z-10 flex items-center justify-center flow-gap-dialog-actions">
           <button
             onClick={onAction}
             className="w-[48%] cursor-pointer transition-transform active:scale-95"
@@ -41,7 +41,7 @@ const GameOver: React.FC<GameOverProps> = ({ type, score, onAction, onBackHome }
             aria-label="再玩一次"
           >
             <img
-              src="/assets/ui_btn_playAgain.png"
+              src="./assets/ui_btn_playAgain.png"
               alt="再玩一次"
               className="h-auto w-full object-contain"
             />
@@ -53,7 +53,7 @@ const GameOver: React.FC<GameOverProps> = ({ type, score, onAction, onBackHome }
             aria-label="返回主页"
           >
             <img
-              src="/assets/ui_btn_backHome.png"
+              src="./assets/ui_btn_backHome.png"
               alt="返回主页"
               className="h-auto w-full object-contain"
             />

@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# 交付用的 zip 是 dist/ 打包出来的产物，同样可再生成，不进版本库
+# （npm run build 后 cd dist && zip -r -X ../tool.zip .）
+tool.zip
+
+# 由 scripts/build-audio.mjs 从 media/audio 生成，不进版本库
+# （改了源文件重跑 npm run audio:build，predev / prebuild 也会自动跑）
+public/audio/sfx-data.js
+
 # 本地环境变量（GEMINI_API_KEY 等）
 .env
 .env.*
