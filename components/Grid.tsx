@@ -46,7 +46,10 @@ const Grid: React.FC<GridProps> = ({
     const maxDim = Math.max(level.width, level.height);
     const isSm = windowSize.width >= 640;
     
-    // Reserves vertical height for header (~56px), timer (~88px), footer (~75px), board frame (~40px), and margins
+    // 竖向预算：header (~56px) + timer (~88px) + 棋盘外框 (~40px) + 余量。
+    // 这个值比实际所需留得宽 —— 历史上还含一根底部按钮栏的约 75px，而那根栏已经删掉了。
+    // 之所以不跟着调小：手机上棋盘尺寸实际由横向限制（0.86 × 视口宽）决定，
+    // 只有极矮的屏幕才会撞到这里；留宽一点只是让它别成为瓶颈。
     const reservedHeight = isSm ? 320 : 270;
     const maxAllowedSize = isSm ? 420 : 380;
     

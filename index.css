@@ -20,17 +20,27 @@
      直接写在自定义属性里，旧内核会把整条 --var 判为无效，
      连带所有 var() 引用它的地方一起作废（底部留白归零、装饰贴到屏幕边上）。
      增强层见下面的 @supports (padding: max(0px))。 */
-  --footer-bottom-gap: 48px;
-  --footer-height: calc(86vw * 0.1623 + 12px);
-  --footer-clearance: calc(var(--footer-bottom-gap) + var(--footer-height) + 44px);
+
+  /* 主区底部留白。这里原来是一条 --footer-clearance =
+     --footer-bottom-gap + --footer-height + 44px ≈ 158px，其中 --footer-height
+     是给一根底部按钮栏预留的高度。那根栏（components/FooterLeftContent.tsx）
+     已经不再被任何地方渲染了，预留却还留着 —— 结果整个棋盘被白白顶高 158px、
+     屏幕下缘空出一大片草地。棋盘是 justify-center 的，底部 padding 每多 1px，
+     棋盘就上移 0.5px，两者叠加就是这个偏移量。
+     现在只按「让内容别贴死底部」来留一点余量，不再给任何已删除的元素让位。 */
+  --main-bottom-gap: 16px;
+
+  /* 两张装饰图（路牌、睡猫）距屏幕底的距离：它们要落在计时器下方那片草地里。 */
+  --decor-cat-gap: 60px;
 }
 
 @supports (padding: max(0px)) {
   :root {
     /* 安全区同时兼容两种来源：真机是 env() 真实值，PC 模拟器由容器注入 --safe-area-* 变量。
-       两者都没给时退回 0px，不会让整条声明失效。 */
-    --footer-bottom-gap: max(48px, calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px));
-    --footer-height: calc(min(86vw, 420px) * 0.1623 + 12px);
+       两者都没给时退回 0px，不会让整条声明失效。
+       只有装饰图需要让开手势条 —— 棋盘和计时器离底部还很远，--main-bottom-gap
+       故意不跟随安全区，免得模拟器上调好的位置一到真机就整体上移。 */
+    --decor-cat-gap: max(60px, calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 26px));
   }
 }
 
@@ -72,7 +82,7 @@ html {
 }
 
 .game-main {
-  padding-bottom: var(--footer-clearance);
+  padding-bottom: var(--main-bottom-gap);
 }
 
 /* 基线：固定值。增强：带上安全区的 max()。 */
@@ -102,17 +112,27 @@ html {
   }
 }
 
-.game-footer {
-  bottom: var(--footer-bottom-gap);
-}
-
 .game-decor-sign {
-  bottom: calc(var(--footer-clearance) - 20px);
+  bottom: calc(var(--decor-cat-gap) + 24px);
 }
 
 .game-decor-cat {
   /* 比路牌再低 24px，避开计时器右侧的重置按钮 */
-  bottom: calc(var(--footer-clearance) - 44px);
+  bottom: var(--decor-cat-gap);
+}
+
+/* 矮屏上竖向空间不够：棋盘内容是 justify-center 的，屏幕越矮，计时器越往下探，
+   最终会探进装饰图那一带。实测 375×667（iPhone SE）与 360×640 上，睡猫必定和
+   计时器/重置按钮压在一起；而这两张图纯观赏、不参与玩法，直接不显示。
+   阈值 760 是算出来的：计时器底边 ≈ 视口高 / 2 + 259（含 .game-main-content 的
+   padding-top 80px），睡猫 93px 高、再留 20px 间距共需 113px，
+   解出视口高需 ≥ 744px，向上取整到 760。
+   注意这一条必须排在上面两条之后，否则 bottom 会被盖掉。 */
+@media (max-height: 760px) {
+  .game-decor-sign,
+  .game-decor-cat {
+    display: none;
+  }
 }
 
 .ui-board-frame {
@@ -298,8 +318,12 @@ html {
   margin-top: 20px;
 }
 
+/* 底部留白 72px 而不是贴边的 28px：原来按钮底边离屏幕下缘只有 28px，
+   正好落在真机手势条 / 小工具容器的底部热区里，手指容易误触或被系统手势抢走。
+   （首页是 flex-col + justify-between，最后一项的 margin-bottom 一变大，
+   按钮上移多少，中间那张横幅就下移一半 —— 整体反而更紧凑。） */
 .home-bottom-gap {
-  margin-bottom: 28px;
+  margin-bottom: 72px;
 }
 
 @supports (margin-top: max(1px, 2px)) {
@@ -308,7 +332,7 @@ html {
   }
 
   .home-bottom-gap {
-    margin-bottom: max(28px, calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 16px));
+    margin-bottom: max(72px, calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 40px));
   }
 }
 
