@@ -10,119 +10,82 @@ interface InfoDialogProps {
   onClose: () => void;
 }
 
+/**
+ * 玩法说明列表。
+ *
+ * `desc` 请控制在一行以内（12px 字号下约 13 个汉字）：整个弹窗要在手机上一屏
+ * 放得下、不出现滚动条，条目数又多，行数一涨就会溢出。宽屏（≥640px）下弹窗
+ * 宽度封顶 400px，文字区会比窄屏更宽，所以按最窄的情况（375px）取值即可。
+ *
+ * `framed` 只在棋盘元素（灌木、旗帜）上为 true —— 它们是方形地块贴图，加个白底
+ * 卡片当画框；奖励道具则直接展示图标本身，不套背景。
+ */
+const RULES: { name: string; desc: string; icon: string; framed?: boolean; anim?: string }[] = [
+  { name: "障碍物", desc: "无法穿过，需绕道规划", icon: "./assets/tile_bush.png", framed: true },
+  { name: "小鱼", desc: "限时出现，吃掉 +5 秒", icon: "./assets/award_fish.png", anim: "animate-award-bob" },
+  { name: "星星", desc: "限时出现，+50 分", icon: "./assets/award_star.png", anim: "animate-award-twinkle" },
+  { name: "盆栽", desc: "第 3 关起出现，+100 分", icon: "./assets/award_plant.png", anim: "animate-award-sway" },
+  { name: "宝箱", desc: "第 5 关起出现，+150 分", icon: "./assets/award_box.png", anim: "animate-award-jiggle" },
+  { name: "方格旗", desc: "填满草地后停在旗帜处通关", icon: "./assets/ui_finish_flag.png", framed: true },
+];
+
 const InfoDialog: React.FC<InfoDialogProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 select-none animate-in fade-in duration-200"
       onClick={onClose}
     >
-      <div 
-        className="relative bg-[#FFF8EB] border-4 border-[#8B5E3C] shadow-[0_12px_32px_rgba(70,40,15,0.25)] rounded-[32px] p-5 sm:p-7 w-full max-w-[400px] flex flex-col items-center max-h-[90vh] overflow-y-auto"
+      <div
+        className="relative bg-[#FFF8EB] border-4 border-[#8B5E3C] shadow-[0_12px_32px_rgba(70,40,15,0.25)] rounded-[28px] p-4 sm:p-6 w-full max-w-[400px] flex flex-col items-center max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Cat ears at top */}
-        <div className="absolute -top-6 flex justify-between w-44 px-2 pointer-events-none">
-          <div className="w-9 h-8 bg-[#8B5E3C] rounded-t-full relative flex items-center justify-center">
-            <div className="w-5 h-5 bg-[#F6AFAF] rounded-t-full" />
-          </div>
-          <div className="w-9 h-8 bg-[#8B5E3C] rounded-t-full relative flex items-center justify-center">
-            <div className="w-5 h-5 bg-[#F6AFAF] rounded-t-full" />
-          </div>
-        </div>
-
-        {/* Close cross */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#EBDBC4] hover:bg-[#DFCDB4] flex items-center justify-center text-[#6B462B] transition-colors cursor-pointer"
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-[#EBDBC4] hover:bg-[#DFCDB4] flex items-center justify-center text-[#6B462B] transition-colors cursor-pointer"
           title="关闭"
         >
           ✕
         </button>
 
-        {/* Mascot & Header */}
-        <div className="w-14 h-14 mt-1 mb-1.5">
-          <img src="./assets/ui_cat_head.png" alt="Cat Head" className="w-full h-full object-contain filter drop-shadow-sm select-none" />
-        </div>
-        <h3 className="text-[#59371D] text-xl font-black">伸缩猫猫大冒险</h3>
-        <p className="text-xs text-[#876346] font-medium mb-3">拉长猫咪身躯，填满草地！</p>
-
-        {/* Rule Items */}
-        <div className="w-full space-y-2 text-[#5C3B21] text-sm">
-          {/* Obstacles info */}
-          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
-            <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-[#DDC6A8] p-0.5">
-              <img src="./assets/tile_bush.png" alt="Obstacles" className="w-full h-full object-contain" />
-            </div>
-            <div className="text-xs leading-snug">
-              <strong className="text-[#523319] block text-xs">障碍物（灌木 / 岩石）</strong>
-              小猫无法穿过灌木与岩石，必须巧妙规划绕道路线。
-            </div>
-          </div>
-
-          {/* Fish */}
-          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
-            <div className="w-8 h-8 flex-shrink-0 relative flex items-center justify-center rounded-lg overflow-hidden border border-[#DDC6A8]">
-              <img src="./assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-              <img src="./assets/award_fish.png" alt="Fish" className="w-[50%] h-[50%] object-contain relative z-10 animate-award-bob" />
-            </div>
-            <div className="text-xs leading-snug">
-              <strong className="text-[#523319] block text-xs">小鱼补时 (+5秒)</strong>
-              限时出现！在小鱼倒计时结束前吃掉可延长通关时间。
-            </div>
-          </div>
-
-          {/* Star & Plant & Box */}
-          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
-            <div className="w-8 h-8 flex-shrink-0 relative flex items-center justify-center rounded-lg overflow-hidden border border-[#DDC6A8]">
-              <img src="./assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-              <img src="./assets/award_star.png" alt="Star" className="w-[42%] h-[42%] object-contain relative z-10 animate-award-twinkle" />
-            </div>
-            <div className="text-xs leading-snug">
-              <strong className="text-[#523319] block text-xs">星星道具 (+50分)</strong>
-              限时出现！基础积分奖励，收集可冲刺更高排位。
-            </div>
-          </div>
-
-          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
-            <div className="w-8 h-8 flex-shrink-0 relative flex items-center justify-center rounded-lg overflow-hidden border border-[#DDC6A8]">
-              <img src="./assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-              <img src="./assets/award_plant.png" alt="Plant" className="w-[44%] h-[44%] object-contain relative z-10 animate-award-sway" />
-            </div>
-            <div className="text-xs leading-snug">
-              <strong className="text-[#523319] block text-xs">盆栽道具 (+100分)</strong>
-              限时出现！第 3 关及以上进阶积分，超时将自动消失。
-            </div>
-          </div>
-
-          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
-            <div className="w-8 h-8 flex-shrink-0 relative flex items-center justify-center rounded-lg overflow-hidden border border-[#DDC6A8]">
-              <img src="./assets/award_bg.png" alt="Award BG" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-              <img src="./assets/award_box.png" alt="Box" className="w-[46%] h-[46%] object-contain relative z-10 animate-award-jiggle" />
-            </div>
-            <div className="text-xs leading-snug">
-              <strong className="text-[#523319] block text-xs">神秘宝箱 (+150分)</strong>
-              限时出现！第 5 关及以上稀有丰厚礼盒，抓紧时间拾取！
-            </div>
-          </div>
-
-          {/* Goal */}
-          <div className="flex items-center flow-gap-info-row bg-[#F8EFE0] p-2 rounded-xl border border-[#E8D4BB]">
-            <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-[#DDC6A8] p-0.5">
-              <img src="./assets/ui_finish_flag.png" alt="Flag" className="w-full h-full object-contain" />
-            </div>
-            <div className="text-xs leading-snug">
-              <strong className="text-[#523319] block text-xs">终点方格旗</strong>
-              填满所有可通行的草地格子后，停在旗帜处即可通关！
-            </div>
-          </div>
+        {/* 标题压成两行紧凑块。这里原本还有一对猫耳和一只猫头——都是纯装饰，
+            猫耳还伸到弹窗框外面 24px，既占高度又容易被容器顶部的东西压到。 */}
+        <div className="text-center mb-3 leading-tight">
+          <h3 className="text-[#59371D] text-base font-black">伸缩猫猫大冒险</h3>
+          <p className="text-[11px] text-[#876346] font-medium">拉长猫咪身躯，填满草地</p>
         </div>
 
-        {/* Start / Close button */}
+        <div className="w-full space-y-1.5 text-[#5C3B21]">
+          {RULES.map((rule) => (
+            <div
+              key={rule.name}
+              className="flex items-center flow-gap-info-row bg-[#F8EFE0] px-2 py-1.5 rounded-xl border border-[#E8D4BB]"
+            >
+              <div
+                className={
+                  rule.framed
+                    ? "w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-[#DDC6A8] p-0.5"
+                    : "w-8 h-8 flex-shrink-0 flex items-center justify-center"
+                }
+              >
+                <img
+                  src={rule.icon}
+                  alt={rule.name}
+                  className={`w-full h-full object-contain${rule.anim ? " " + rule.anim : ""}`}
+                />
+              </div>
+              <p className="text-xs leading-snug">
+                <strong className="text-[#523319]">{rule.name}</strong>
+                <span className="text-[#7A5A40]"> · {rule.desc}</span>
+              </p>
+            </div>
+          ))}
+        </div>
+
         <button
           onClick={onClose}
-          className="mt-4 w-full py-2.5 bg-[#F27E7E] hover:bg-[#E96F6F] active:scale-95 text-white font-bold rounded-full shadow-[0_3px_0_#C55858] transition-all cursor-pointer text-sm"
+          className="mt-3 w-full py-2.5 bg-[#F27E7E] hover:bg-[#E96F6F] active:scale-95 text-white font-bold rounded-full shadow-[0_3px_0_#C55858] transition-all cursor-pointer text-sm"
         >
           我知道啦，继续挑战！
         </button>

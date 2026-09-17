@@ -32,6 +32,14 @@
 
   /* 两张装饰图（路牌、睡猫）距屏幕底的距离：它们要落在计时器下方那片草地里。 */
   --decor-cat-gap: 60px;
+
+  /* 容器自带导航栏（含右上角那排按钮）占掉的高度。
+     规范里写明「导航栏等外壳由容器统一控制」，所以这层高度不在页面安全区里，
+     得在 top 上单独让出来 —— 否则音量/设置两颗按钮会被容器自己的按钮压住。
+     容器没有暴露拿这个高度的接口，所以这里是个估计值：
+     想整体上下微调右上角那两颗按钮，改这一个数就行
+     （真机上没被挡住就说明还能再调小，被挡住了就调大）。 */
+  --container-top-bar: 48px;
 }
 
 @supports (padding: max(0px)) {
@@ -91,7 +99,7 @@ html {
 }
 
 .game-header {
-  top: 8px;
+  top: calc(var(--container-top-bar) + 8px);
 }
 
 @supports (padding-top: max(0px)) {
@@ -100,7 +108,7 @@ html {
   }
 
   .game-header {
-    top: max(8px, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px));
+    top: calc(var(--container-top-bar) + max(8px, calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 8px)));
   }
 }
 
